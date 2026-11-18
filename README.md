@@ -20,23 +20,27 @@ docker compose exec -T app pytest -q
 - 5. 优惠回算：`/discounts`，`/api/discounts`。
 - 6. 清分对账：`/clearing`，`/api/clearing`。
 - 7. 日结归档：`/settlement`，`/api/settlement`。
+- 8. 回执对账：`/receipts`，`/api/runs/<id>/receipts`。
 
 ## 核心规则
 
 换乘按上次有效付费行程的时间窗计算，优惠与日封顶按确定顺序裁决并保留分币守恒。
+
+银行回执晚到且可能拆成多条。回执未齐时采用确认制：只有带终结回执的行程参与换乘与封顶计算，未落账行程不提前占额。终结回执到达即整体重算，逐程输出补扣、退款或不变，回执号幂等去重，重算失败保留旧版，未对平不封存日结。原始刷卡与回执原文均按sha256留档。
 
 ## 演示
 
 1. 打开首页，核对当次计算、差异和隔离原因。
 2. 切换模块查看源行及裁决依据。
 3. 重跑相同样例，批次号与行数保持一致。
-4. 复核后导出一份证据CSV。版本已变化的复核提交返回409。
+4. 进入“回执对账”导入回执样例，查看逐程补扣/退款/不变清单；对平后封存日结。
+5. 复核后导出一份证据CSV。版本已变化的复核提交返回409。
 
 ## 输入与输出
 
-输入列见 `docs/DATA-DICTIONARY.md`。项目包含dirty.csv、clean.csv、legacy.csv，统一走实际导入路径。上传限制4MB，拒绝不带时区的时间。业务键按字符串保留，Decimal参与计算，空值不会当零。
+输入列见 `docs/DATA-DICTIONARY.md`。项目包含dirty.csv、clean.csv、legacy.csv与receipts_*.csv回执样例，统一走实际导入路径。上传限制4MB，拒绝不带时区的时间。业务键按字符串保留，Decimal参与计算，空值不会当零。
 
-`POST /api/runs` 接收sample或csv；`GET /api/runs`返回历史批次；`POST /api/runs/<id>/review`需要version与decision；`GET /api/runs/<id>/archive`返回唯一证据导出。
+`POST /api/runs` 接收sample或csv；`GET /api/runs`返回历史批次；`POST /api/runs/<id>/review`需要version与decision；`GET /api/runs/<id>/archive`返回唯一证据导出。回执接口见`docs/API.md`。
 
 ## 范围
 

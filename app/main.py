@@ -1,5 +1,5 @@
 from flask import Flask,jsonify,request,send_from_directory
-from app.config import ROOT,DATA_DIR,MODULES
+from app.config import ROOT,DATA_DIR,MODULES,RECEIPTS_MODULE
 from app.errors import DomainError
 from app import pipeline,store
 from app.web import register_pages
@@ -48,6 +48,8 @@ def create_app():
     for index,(slug,title) in enumerate(MODULES,1):
         module=importlib.import_module(f"app.modules.m{index}_{slug}.handler")
         application.register_blueprint(module.bp)
+    receipts=importlib.import_module("app.modules.m8_receipts.handler")
+    application.register_blueprint(receipts.bp)
     register_pages(application)
     return application
 app=create_app()
